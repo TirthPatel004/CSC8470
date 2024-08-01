@@ -2,7 +2,100 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!-- Hero Section -->
+<section class="hero mt-2">
+    <div class="container">
+        <h1 class="display-4">Welcome to Jobportal</h1>
+        <p class="lead">Your gateway to the best job opportunities and company insights.</p>
+        <a href="#services" class="btn btn-custom">Get Started</a>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="services" class="container section-header">
+    <h2 class="text-center">Our Features</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card card-custom">
+                <img src="https://media.istockphoto.com/id/1287699401/photo/job-search-website-on-laptop-find-a-job.jpg?s=612x612&w=0&k=20&c=UkRomrrPtfAgOyKOY5KYBAzzsGPeMf2RntTCcze3zZA=" class="card-img-top" alt="Feature 1">
+                <div class="card-body">
+                    <h5 class="card-title">Job Listings</h5>
+                    <p class="card-text">Find the best job opportunities from top companies.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-custom">
+                <img src="https://mir-s3-cdn-cf.behance.net/projects/404/300757181761085.Y3JvcCwyOTg1LDIzMzUsMjM2LDA.jpg" class="card-img-top" alt="Feature 2">
+                <div class="card-body">
+                    <h5 class="card-title">Company Profiles</h5>
+                    <p class="card-text">Explore detailed profiles of companies hiring now.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-custom">
+                <img src="https://images.ctfassets.net/k0lk9kiuza3o/6R02I0bR2jZWZP5RnJrAs2/085f161ab3f00c6c128a522c9ae8fe53/-Blog_hero-_Applicant-tracking-system-2023.png?q=85&fm=webp" class="card-img-top" alt="Feature 3">
+                <div class="card-body">
+                    <h5 class="card-title">Application Tracking</h5>
+                    <p class="card-text">Track the status of your job applications seamlessly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="container section-header">
+    <h2 class="text-center">Our Achievements</h2>
+    <div class="row">
+        <div class="col-md-4 counter-container">
+            <div class="counter" id="jobsCounter">0</div>
+            <p class="text-center">Jobs Posted</p>
+        </div>
+        <div class="col-md-4 counter-container">
+            <div class="counter" id="companiesCounter">0</div>
+            <p class="text-center">Companies Registered</p>
+        </div>
+        <div class="col-md-4 counter-container">
+            <div class="counter" id="applicationsCounter">0</div>
+            <p class="text-center">Applications Submitted</p>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section class="container section-header">
+    <h2 class="text-center">Get in Touch</h2>
+    <div class="text-center">
+        <p>Have any questions? Feel free to <a href="mailto:info@jobportal.com">contact us</a>.</p>
+    </div>
+</section>
+
+<!-- JavaScript for Counter Animation -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function animateCounter(id, endValue) {
+            let startValue = 0;
+            let duration = 2000; // Duration of animation in milliseconds
+            let increment = endValue / (duration / 100);
+            let counter = document.getElementById(id);
+
+            function updateCounter() {
+                startValue += increment;
+                if (startValue >= endValue) {
+                    startValue = endValue;
+                    counter.textContent = Math.floor(endValue);
+                    return;
+                }
+                counter.textContent = Math.floor(startValue);
+                requestAnimationFrame(updateCounter);
+            }
+            updateCounter();
+        }
+
+        animateCounter("jobsCounter", 1200);
+        animateCounter("companiesCounter", 150);
+        animateCounter("applicationsCounter", 3000);
+    });
+</script>

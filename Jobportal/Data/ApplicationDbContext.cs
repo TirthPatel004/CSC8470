@@ -19,7 +19,7 @@ namespace JobPortal.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configure relationships, indexes, etc. here if needed
+          
         }
     }
 }

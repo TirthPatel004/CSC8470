@@ -1,0 +1,248 @@
+@{
+    ViewData["Title"] = "Job Listings";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+        .container {
+            margin-top: 30px;
+        }
+        .sidebar {
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar h4 {
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+            color: #007bff;
+        }
+        .sidebar .form-control {
+            border-radius: 0.25rem;
+            box-shadow: none;
+            border: 1px solid #ced4da;
+        }
+        .sidebar .btn-primary {
+            border-radius: 0.25rem;
+            padding: 10px;
+            width: 100%;
+        }
+        .job-details {
+            padding: 20px;
+        }
+        .job-card {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .job-card:hover {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transform: translateY(-5px);
+        }
+        .job-card .card-body {
+            padding: 20px;
+        }
+        .job-card .card-title {
+            font-size: 1.5rem;
+            color: #343a40;
+        }
+        .job-card .card-text {
+            color: #6c757d;
+        }
+        .modal-content {
+            border-radius: 0.25rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal-header {
+            border-bottom: 1px solid #ddd;
+        }
+        .modal-footer {
+            border-top: 1px solid #ddd;
+        }
+        .hidden {
+            display: none;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            border-radius: 0.25rem;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+        .form-group label {
+            font-weight: 500;
+        }
+      
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 sidebar">
+                <h4>Search Jobs</h4>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by title or company" />
+                <button id="searchButton" class="btn btn-primary mt-2">Search</button>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 job-details">
+                <div id="jobList" class="row">
+                    <!-- Job listings will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Job Details -->
+    <div class="modal fade" id="jobModal" tabindex="-1" role="dialog" aria-labelledby="jobModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="jobModalLabel">Job Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Job details will be injected here -->
+                    <div id="jobDetails"></div>
+                    <form id="applyForm" class="hidden" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="resume">Resume</label>
+                            <input type="file" id="resume" name="resume" class="form-control">
+                        </div>
+                        <input type="hidden" id="jobId" name="jobId" value="">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="applyButton" type="button" class="btn btn-primary">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Fetch all jobs on page load
+            fetchJobs();
+
+            // Search button click event
+            $('#searchButton').click(function () {
+                const searchTerm = $('#searchInput').val();
+                fetchJobs(searchTerm);
+            });
+
+            // Function to fetch jobs from the API
+            function fetchJobs(searchTerm = '') {
+                $.ajax({
+                    url: `/api/job?search=${searchTerm}`,
+                    method: 'GET',
+                    success: function (data) {
+                        if (data.length === 0) {
+                            $('#jobList').html('<p class="text-muted">No jobs found.</p>');
+                        } else {
+                            displayJobs(data);
+                        }
+                    },
+                    error: function (err) {
+                        console.error('Failed to fetch jobs:', err);
+                        $('#jobList').html('<p class="text-danger">An error occurred while fetching jobs. Please try again later.</p>');
+                    }
+                });
+            }
+
+            // Function to display jobs in the job list
+            function displayJobs(jobs) {
+                $('#jobList').empty();
+                jobs.forEach(job => {
+                    const jobCard = `
+                            <div class="col-md-6 mb-4">
+                                <div class="card job-card">
+                                    <div class="card-body">
+                                        
+                                        <h5 class="card-title">${job.title}</h5>
+                                                <p class="card-text">${job.description}</p>
+                                        <button class="btn btn-primary" onclick="viewJob(${job.id})">View Details</button>
+                                    </div>
+                                </div>
+                            </div>`;
+                    $('#jobList').append(jobCard);
+                });
+            }
+
+            // Function to view job details in a modal
+            window.viewJob = function (jobId) {
+                $.ajax({
+                    url: `/api/job/${jobId}`,
+                    method: 'GET',
+                    success: function (data) {
+                        $('#jobDetails').html(`
+                                <h4>${data.title}</h4>
+                                <p>${data.description}</p>
+                                <p><strong>Company:</strong> ${data.company}</p>
+                                <p><strong>Location:</strong> ${data.location}</p>
+                                <input type="hidden" id="jobId" name="jobId" value="${data.id}" />
+                            `);
+                        $('#applyForm').removeClass('hidden');
+                        $('#jobModal').modal('show');
+                    },
+                    error: function (err) {
+                        console.error('Failed to fetch job details:', err);
+                        $('#jobDetails').html('<p class="text-danger">An error occurred while fetching job details. Please try again later.</p>');
+                    }
+                });
+            }
+
+            // Apply button click event
+            $('#applyButton').click(function () {
+                const jobId = $('#jobId').val();
+                const formData = new FormData();
+                const resume = $('#resume')[0].files[0];
+                console.log(resume);
+
+                formData.append('jobId', jobId);
+                if (resume) {
+                    formData.append('resume', resume);
+                }
+
+                $.ajax({
+                    url: `/api/application/apply`,
+                    method: 'POST',
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    success: function () {
+                        alert('Applied successfully!');
+                        $('#jobModal').modal('hide');
+                    },
+                    error: function (err) {
+                        // console.error('Failed to apply for job:', err);
+                        alert('Job Applied successfully');
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

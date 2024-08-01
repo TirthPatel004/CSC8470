@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using JobPortal.Models;
@@ -52,26 +53,35 @@ namespace JobPortal.Controllers
             }
         }
 
-        // POST: api/job
         [HttpPost]
-        public async Task<IActionResult> Post(Job job)
+        public async Task<IActionResult> PostJob([FromBody] Job jobModel)
         {
-            if (!ModelState.IsValid)
+            if (jobModel.CompanyId <= 0)
             {
-                var errors = ModelState.SelectMany(ms => ms.Value.Errors.Select(e => e.ErrorMessage));
-                return BadRequest(new { message = "Validation failed", errors });
+                return BadRequest("Invalid Company ID");
             }
 
-            try
+            var job = new Job
             {
-                var newJob = await _jobService.CreateJobAsync(job);
-                return CreatedAtAction(nameof(Get), new { id = newJob.Id }, new { message = "Job created successfully!", job = newJob });
+                Title = jobModel.Title,
+                Location = jobModel.Location,
+                Description = jobModel.Description,
+                CompanyId = jobModel.CompanyId,
+                PostedDate = DateTime.UtcNow
+            };
+
+            var result = await _jobService.CreateJobAsync(job);
+            if (result != null)
+            {
+                return Ok(new { message = "Job posted successfully" });
             }
-            catch (Exception ex)
+            else
             {
-                return BadRequest(new { message = "Failed to create job", error = ex.Message });
+                return StatusCode(500, "Failed to post job");
             }
         }
+
+
 
         // PUT: api/job/5
         [HttpPut("{id}")]

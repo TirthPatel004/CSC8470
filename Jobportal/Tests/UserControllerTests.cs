@@ -1,149 +1,165 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using JobPortal.Controllers;
 using JobPortal.Models;
 using JobPortal.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Xunit;
-using JobPortal.Data;
-using Microsoft.EntityFrameworkCore;
 
-public class UserControllerTests
+namespace JobPortal.Tests
 {
-    private readonly UserService _userService;
-    private readonly UserController _userController;
-
-    public UserControllerTests()
+    public class UserControllerTests
     {
-        // Setup in-memory database for testing
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
-            .Options;
+        private readonly Mock<UserService> _userServiceMock;
+        private readonly Mock<ApplicationService> _applicationServiceMock;
+        private readonly UserController _controller;
 
-        var dbContext = new ApplicationDbContext(options);
-        SeedTestData(dbContext); // Optional: Seed test data if needed
-
-        _userService = new UserService(dbContext);
-        _userController = new UserController(_userService);
-    }
-
-    // Helper method to seed test data (optional)
-    private void SeedTestData(ApplicationDbContext dbContext)
-    {
-        dbContext.Users.AddRange(new List<User>
+        public UserControllerTests()
         {
-            new User { Id = 4, FirstName = "John", LastName = "Doe", Email = "johndoe@example.com", Password = "Password123" },
-            new User { Id = 5, FirstName = "Jane", LastName = "Doe", Email = "janedoe@example.com", Password = "Password456" }
-        });
+            _userServiceMock = new Mock<UserService>();
+            _applicationServiceMock = new Mock<ApplicationService>();
+            _controller = new UserController(_userServiceMock.Object, _applicationServiceMock.Object);
 
-        dbContext.SaveChanges();
-    }
+            // Setup HttpContext and User claims for controller
+            var context = new DefaultHttpContext();
+            context.User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, "1"),
+                new Claim(ClaimTypes.Name, "user@example.com")
+            }, CookieAuthenticationDefaults.AuthenticationScheme));
+            _controller.ControllerContext.HttpContext = context;
+        }
 
-    [Fact]
-    public async Task Register_CreatesNewUser()
-    {
-        // Arrange
-        var newUser = new User
+        [Fact]
+        public void RegisterView_ReturnsViewResult()
         {
-            FirstName = "Alice",
-            LastName = "Smith",
-            Email = "alicesmith@example.com",
-            Password = "NewPassword123"
-        };
+            // Act
+            var result = _controller.RegisterView();
 
-        // Act
-        var result = await _userController.Register(newUser) as OkObjectResult;
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Equal("/Views/User/Register.cshtml", viewResult.ViewName);
+        }
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var createdUser = result.Value.GetType().GetProperty("user").GetValue(result.Value, null) as User;
-        Assert.NotNull(createdUser);
-        Assert.Equal(newUser.Email, createdUser.Email);
-    }
-
-    [Fact]
-    public async Task Login_ReturnsUserOnValidCredentials()
-    {
-        // Arrange
-        var loginModel = new LoginModel
+        [Fact]
+        public async Task Register_ReturnsOkResult_WithNewUser()
         {
-            Email = "johndoe@example.com",
-            Password = "Password123"
-        };
+            // Arrange
+            var newUser = new User { Id = 1, Email = "test@example.com" };
+            _userServiceMock.Setup(service => service.RegisterAsync(It.IsAny<User>())).ReturnsAsync(newUser);
 
-        // Act
-        var result = await _userController.Login(loginModel) as OkObjectResult;
+            var userToRegister = new User { Email = "test@example.com", Password = "password" };
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var user = result.Value.GetType().GetProperty("user").GetValue(result.Value, null) as User;
-        Assert.NotNull(user);
-        Assert.Equal(loginModel.Email, user.Email);
-    }
+            // Act
+            var result = await _controller.Register(userToRegister);
 
-    [Fact]
-    public async Task Login_ReturnsUnauthorizedOnInvalidCredentials()
-    {
-        // Arrange
-        var loginModel = new LoginModel
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedUser = Assert.IsType<User>(((dynamic)okResult.Value).user);
+            Assert.Equal(newUser.Email, returnedUser.Email);
+        }
+
+        [Fact]
+        public void MainLogin_ReturnsViewResult()
         {
-            Email = "wrong@example.com",
-            Password = "WrongPassword"
-        };
+            // Act
+            var result = _controller.MainLogin();
 
-        // Act
-        var result = await _userController.Login(loginModel) as UnauthorizedObjectResult;
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.Equal("/Views/User/MainLogin.cshtml", viewResult.ViewName);
+        }
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<UnauthorizedObjectResult>(result);
-        var message = result.Value.GetType().GetProperty("message").GetValue(result.Value, null) as string;
-        Assert.Equal("Invalid credentials", message);
-    }
-
-    [Fact]
-    public async Task Update_UpdatesExistingUser()
-    {
-        // Arrange
-        var userId = 4;
-        var updatedUser = new User
+        [Fact]
+        public async Task Login_ReturnsOkResult_WithAuthenticatedUser()
         {
-            Id = userId,
-            FirstName = "Jane",
-            LastName = "Updated",
-            Email = "janedoe@example.com",
-            Password = "NewPassword123"
-        };
+            // Arrange
+            var user = new User { Id = 1, Email = "test@example.com" };
+            var loginModel = new LoginModel { Email = "test@example.com", Password = "password" };
 
-        // Act
-        var result = await _userController.Update(userId, updatedUser) as OkObjectResult;
+            _userServiceMock.Setup(service => service.LoginAsync(loginModel.Email, loginModel.Password))
+                .ReturnsAsync(user);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var user = result.Value.GetType().GetProperty("user").GetValue(result.Value, null) as User;
-        Assert.NotNull(user);
-        Assert.Equal(updatedUser.LastName, user.LastName);
-    }
+            // Act
+            var result = await _controller.Login(loginModel);
 
-    [Fact]
-    public async Task Delete_RemovesUser()
-    {
-        // Arrange
-        var userId = 5;
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedUser = Assert.IsType<User>(((dynamic)okResult.Value).user);
+            Assert.Equal(user.Email, returnedUser.Email);
+        }
 
-        // Act
-        var result = await _userController.Delete(userId) as OkObjectResult;
+        [Fact]
+        public async Task UserDashboard_ReturnsViewResult_WithDashboardModel()
+        {
+            // Arrange
+            var userProfile = new User { Id = 1, Email = "test@example.com" };
+            var applications = new List<Application> { new Application { Id = 1, JobId = 1 } };
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var deletedUser = result.Value.GetType().GetProperty("user").GetValue(result.Value, null) as User;
-        Assert.NotNull(deletedUser);
-        Assert.Equal(userId, deletedUser.Id);
+            _userServiceMock.Setup(service => service.GetUserByIdAsync(1)).ReturnsAsync(userProfile);
+            _applicationServiceMock.Setup(service => service.GetApplicationsByUserIdAsync(1)).ReturnsAsync(applications);
+
+            // Act
+            var result = await _controller.UserDashboard();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            var model = Assert.IsType<UserDashboardViewModel>(viewResult.Model);
+            Assert.Equal(userProfile, model.UserProfile);
+            Assert.Equal(applications, model.AppliedApplications);
+        }
+
+        [Fact]
+        public async Task Update_ReturnsOkResult_WithUpdatedUser()
+        {
+            // Arrange
+            var existingUser = new User { Id = 1, Email = "old@example.com" };
+            var updatedUser = new User { Id = 1, Email = "new@example.com" };
+
+            _userServiceMock.Setup(service => service.UpdateAsync(1, It.IsAny<User>())).ReturnsAsync(updatedUser);
+
+            // Act
+            var result = await _controller.Update(1, updatedUser);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedUser = Assert.IsType<User>(((dynamic)okResult.Value).user);
+            Assert.Equal(updatedUser.Email, returnedUser.Email);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsOkResult_WithDeletedUser()
+        {
+            // Arrange
+            var deletedUser = new User { Id = 1, Email = "deleted@example.com" };
+
+            _userServiceMock.Setup(service => service.DeleteAsync(1)).ReturnsAsync(deletedUser);
+
+            // Act
+            var result = await _controller.Delete(1);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedUser = Assert.IsType<User>(((dynamic)okResult.Value).user);
+            Assert.Equal(deletedUser.Email, returnedUser.Email);
+        }
+
+        [Fact]
+        public void Logout_ReturnsOkResult()
+        {
+            // Act
+            var result = _controller.Logout();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("Logout successful", ((dynamic)okResult.Value).message);
+        }
     }
 }

@@ -28,12 +28,18 @@ namespace Jobportal.Migrations
                     b.Property<DateTime>("AppliedDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<int>("JobId")
                         .HasColumnType("int");
 
                     b.Property<string>("Resume")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");

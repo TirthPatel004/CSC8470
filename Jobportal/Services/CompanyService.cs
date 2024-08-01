@@ -1,3 +1,4 @@
+
 using JobPortal.Data;
 using JobPortal.Models;
 using Microsoft.EntityFrameworkCore;
@@ -17,21 +18,31 @@ namespace JobPortal.Services
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
+        // Method to get all companies
         public IEnumerable<Company> GetAllCompanies()
         {
-            return _context.Companies;
+            return _context.Companies.ToList();
         }
 
+        // Async method to get all companies
+        public async Task<IEnumerable<Company>> GetAllCompaniesAsync()
+        {
+            return await _context.Companies.ToListAsync();
+        }
+
+        // Method to get a company by ID
         public Company GetCompanyById(int id)
         {
             return _context.Companies.FirstOrDefault(c => c.Id == id);
         }
 
+        // Async method to get a company by ID
         public async Task<Company> GetCompanyByIdAsync(int id)
         {
             return await _context.Companies.FindAsync(id);
         }
 
+        // Async method to create a new company
         public async Task<Company> CreateCompanyAsync(Company company)
         {
             try
@@ -47,6 +58,7 @@ namespace JobPortal.Services
             }
         }
 
+        // Async method to update a company
         public async Task<Company> UpdateCompanyAsync(int id, Company company)
         {
             try
@@ -70,6 +82,7 @@ namespace JobPortal.Services
             }
         }
 
+        // Async method to delete a company
         public async Task<Company> DeleteCompanyAsync(int id)
         {
             try
@@ -89,10 +102,29 @@ namespace JobPortal.Services
             }
         }
 
+        // Method to authenticate a company
         public Company Authenticate(string email, string password)
         {
             // Example: Authenticate logic based on email and password
             return _context.Companies.FirstOrDefault(c => c.Email == email && c.Password == password);
+        }
+
+        // Async method to get jobs by company ID
+        public async Task<IEnumerable<Job>> GetJobsByCompanyIdAsync(int companyId)
+        {
+            return await _context.Jobs.Where(j => j.CompanyId == companyId).ToListAsync();
+        }
+
+        // Async method to get applications by company ID
+        public async Task<IEnumerable<Application>> GetApplicationsByCompanyIdAsync(int companyId)
+        {
+            return await _context.Applications.Where(a => a.CompanyId == companyId).ToListAsync();
+        }
+
+        // Async method to get all users
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _context.Users.ToListAsync();
         }
     }
 }

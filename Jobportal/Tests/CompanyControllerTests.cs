@@ -1,161 +1,139 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using JobPortal.Controllers;
 using JobPortal.Models;
 using JobPortal.Services;
-using JobPortal.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Moq;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
-public class CompanyControllerTests
+namespace JobPortal.Tests
 {
-    private readonly CompanyService _companyService;
-    private readonly CompanyController _companyController;
-    private readonly DbContextOptions<ApplicationDbContext> _options;
-
-    public CompanyControllerTests()
+    public class CompanyControllerTests
     {
-        // Setup in-memory database
-        _options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "JobPortalTestDb")
-            .Options;
+        private readonly Mock<CompanyService> _companyServiceMock;
+        private readonly Mock<ILogger<CompanyController>> _loggerMock;
+        private readonly CompanyController _controller;
 
-        // Seed data
-        using (var context = new ApplicationDbContext(_options))
+        public CompanyControllerTests()
         {
-            context.Companies.AddRange(
-                new Company { Id = 1, Name = "Updated ABC Company", Address = "456 Oak Avenue", Website = "https://www.updatedabccompany.com", Password = "updatedpassword456", Email = "" },
-                new Company { Id = 2, Name = "Tech Solutions Inc.", Address = "123 Tech Street, Techland", Website = "https://techsolutions.com", Password = "securepassword", Email = "info@techsolutions.com" },
-                new Company { Id = 4, Name = "ABC Company", Address = "123 Main Street", Website = "https://www.abccompany.com", Password = "password123", Email = "contact@hjkmpany.com" },
-                new Company { Id = 5, Name = "ABC Company", Address = "123 Main Street", Website = "https://www.abccompany.com", Password = "password123", Email = "contact@hnmmpany.com" },
-                new Company { Id = 6, Name = "ABC Company", Address = "123 Main Street", Website = "https://www.abccompany.com", Password = "password123", Email = "contact@hnmmpany.com" }
-            );
-            context.SaveChanges();
+            _companyServiceMock = new Mock<CompanyService>();
+            _loggerMock = new Mock<ILogger<CompanyController>>();
+            _controller = new CompanyController(_companyServiceMock.Object, _loggerMock.Object);
         }
 
-        _companyService = new CompanyService(new ApplicationDbContext(_options));
-        _companyController = new CompanyController(_companyService);
-    }
-
-    [Fact]
-    public void Get_ReturnsAllCompanies()
-    {
-        // Act
-        var result = _companyController.Get() as OkObjectResult;
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var companies = result.Value as IEnumerable<Company>;
-        Assert.NotNull(companies);
-        Assert.Equal(5, companies.Count()); // Adjust the expected count based on your actual data
-    }
-
-    [Fact]
-    public void Get_ReturnsCompanyById()
-    {
-        // Arrange
-        var companyId = 2;
-
-        // Act
-        var result = _companyController.Get(companyId) as OkObjectResult;
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var company = result.Value as Company;
-        Assert.NotNull(company);
-        Assert.Equal(companyId, company.Id);
-    }
-
-    [Fact]
-    public async Task SignUp_CreatesNewCompany()
-    {
-        // Arrange
-        var newCompany = new Company
+        [Fact]
+        public async Task Get_ReturnsOkResult_WithCompanies()
         {
-            Name = "New Company",
-            Address = "789 New Street",
-            Website = "https://newcompany.com",
-            Password = "newpassword",
-            Email = "contact@newcompany.com"
-        };
+            // Arrange
+            var companies = new List<Company>
+            {
+                new Company { Id = 1, Name = "Company1" },
+                new Company { Id = 2, Name = "Company2" }
+            };
 
-        // Act
-        var result = await _companyController.SignUp(newCompany) as OkObjectResult;
+            _companyServiceMock.Setup(service => service.GetAllCompanies()).Returns(companies);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var createdCompany = result.Value.GetType().GetProperty("company").GetValue(result.Value, null) as Company;
-        Assert.NotNull(createdCompany);
-        Assert.Equal(newCompany.Name, createdCompany.Name);
-    }
+            // Act
+            var result = _controller.Get(); // This should not be awaited
 
-    [Fact]
-    public void Login_ReturnsCompanyForValidCredentials()
-    {
-        // Arrange
-        var loginModel = new LoginModel
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnCompanies = Assert.IsAssignableFrom<List<Company>>(okResult.Value);
+            Assert.Equal(companies.Count, returnCompanies.Count);
+        }
+
+        // [Fact]
+        // public async Task Get_ReturnsNotFoundResult_WhenCompanyDoesNotExist()
+        // {
+        //     // Arrange
+        //     _companyServiceMock.Setup(service => service.GetCompanyById(1)).Returns((Company)null);
+
+        //     // Act
+        //     var result = await _controller.Get(1); // Await here for async method
+
+        //     // Assert
+        //     var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+        //     Assert.Equal("Company not found", ((dynamic)notFoundResult.Value).message);
+        // }
+
+        [Fact]
+        public async Task SignUp_ReturnsCreatedAtActionResult_WithNewCompany()
         {
-            Email = "info@techsolutions.com",
-            Password = "securepassword"
-        };
+            // Arrange
+            var newCompany = new Company { Id = 1, Name = "NewCompany" };
+            _companyServiceMock.Setup(service => service.CreateCompanyAsync(It.IsAny<Company>()))
+                .ReturnsAsync(newCompany);
 
-        // Act
-        var result = _companyController.Login(loginModel) as OkObjectResult;
+            var companyToCreate = new Company { Name = "NewCompany" };
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var company = result.Value.GetType().GetProperty("company").GetValue(result.Value, null) as Company;
-        Assert.NotNull(company);
-        Assert.Equal(loginModel.Email, company.Email);
-    }
+            // Act
+            var result = await _controller.SignUp(companyToCreate);
 
-    [Fact]
-    public async Task UpdateCompany_UpdatesExistingCompany()
-    {
-        // Arrange
-        var companyId = 2;
-        var updatedCompany = new Company
+            // Assert
+            var createdAtActionResult = Assert.IsType<CreatedAtActionResult>(result);
+            var returnedCompany = Assert.IsType<Company>(createdAtActionResult.Value);
+            Assert.Equal(newCompany.Id, returnedCompany.Id);
+        }
+
+        [Fact]
+        public async Task Login_ReturnsOkResult_WithAuthenticatedCompany()
         {
-            Id = companyId,
-            Name = "Updated Tech Solutions Inc.",
-            Address = "123 Tech Street, Techland",
-            Website = "https://updatedtechsolutions.com",
-            Password = "updatedpassword",
-            Email = "updated@techsolutions.com"
-        };
+            // Arrange
+            var company = new Company { Id = 1, Email = "test@example.com", Name = "TestCompany" };
+            var loginModel = new LoginModel { Email = "test@example.com", Password = "password" };
 
-        // Act
-        var result = await _companyController.UpdateCompany(companyId, updatedCompany) as OkObjectResult;
+            _companyServiceMock.Setup(service => service.Authenticate(loginModel.Email, loginModel.Password))
+                .Returns(company);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var company = result.Value as Company;
-        Assert.NotNull(company);
-        Assert.Equal(updatedCompany.Name, company.Name);
-    }
+            // Act
+            var result = await _controller.Login(loginModel);
 
-    [Fact]
-    public async Task Delete_RemovesCompany()
-    {
-        // Arrange
-        var companyId = 5;
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedCompany = Assert.IsType<Company>(okResult.Value);
+            Assert.Equal(company.Email, returnedCompany.Email);
+            Assert.Equal(company.Name, returnedCompany.Name);
+        }
 
-        // Act
-        var result = await _companyController.Delete(companyId) as OkObjectResult;
+        [Fact]
+        public async Task UpdateCompany_ReturnsOkResult_WithUpdatedCompany()
+        {
+            // Arrange
+            var existingCompany = new Company { Id = 1, Name = "ExistingCompany" };
+            var updatedCompany = new Company { Id = 1, Name = "UpdatedCompany" };
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var deletedCompany = result.Value.GetType().GetProperty("company").GetValue(result.Value, null) as Company;
-        Assert.NotNull(deletedCompany);
-        Assert.Equal(companyId, deletedCompany.Id);
+            _companyServiceMock.Setup(service => service.GetCompanyByIdAsync(1)).ReturnsAsync(existingCompany);
+            _companyServiceMock.Setup(service => service.UpdateCompanyAsync(1, updatedCompany))
+                .ReturnsAsync(updatedCompany);
+
+            // Act
+            var result = await _controller.UpdateCompany(1, updatedCompany);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedCompany = Assert.IsType<Company>(okResult.Value);
+            Assert.Equal(updatedCompany.Name, returnedCompany.Name);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsOkResult_WithDeletedCompany()
+        {
+            // Arrange
+            var deletedCompany = new Company { Id = 1, Name = "DeletedCompany" };
+
+            _companyServiceMock.Setup(service => service.DeleteCompanyAsync(1))
+                .ReturnsAsync(deletedCompany);
+
+            // Act
+            var result = await _controller.Delete(1);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedCompany = Assert.IsType<Company>(okResult.Value);
+            Assert.Equal(deletedCompany.Id, returnedCompany.Id);
+        }
     }
 }

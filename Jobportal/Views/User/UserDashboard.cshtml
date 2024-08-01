@@ -1,0 +1,281 @@
+@model JobPortal.Models.UserDashboardViewModel
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background: #f0f2f5;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            margin-top: 20px;
+        }
+
+        .row {
+            margin: 0;
+        }
+
+        .list-group {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .list-group-item {
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 5px;
+        }
+
+            .list-group-item.active {
+                background-color: #007bff;
+                color: white;
+                font-weight: bold;
+            }
+
+            .list-group-item:hover {
+                background-color: #f1f1f1;
+            }
+
+        .btn {
+            border-radius: 25px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+            .btn-primary:hover {
+                background-color: #0056b3;
+                border-color: #004085;
+            }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+            .btn-secondary:hover {
+                background-color: #5a6268;
+                border-color: #545b62;
+            }
+
+        h2 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-control {
+            border-radius: 25px;
+            box-shadow: none;
+            border: 1px solid #ced4da;
+        }
+
+            .form-control:focus {
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+            }
+
+        table {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #e9ecef;
+        }
+
+        #logoutButton {
+            background-color: #dc3545;
+            color: white;
+        }
+
+            #logoutButton:hover {
+                background-color: #c82333;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action active" id="personalDetailsTab">Personal Details</a>
+                    <a href="#" class="list-group-item list-group-item-action" id="applicationsTab">Applied Applications</a>
+                    <button id="logoutButton" class="list-group-item list-group-item-action">Logout</button>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="col-md-9">
+                <h1 class="text-center">USER DASHBOARD</h1>
+                <div class="text-center" id="personalDetails">
+                    <h2>Personal Details</h2>
+                    <form id="updateForm">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" class="form-control" id="firstName" name="FirstName" value="@Model.UserProfile.FirstName" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" class="form-control" id="lastName" name="LastName" value="@Model.UserProfile.LastName" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" class="form-control" id="email" name="Email" value="@Model.UserProfile.Email" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" class="form-control" id="password" name="Password" value="@Model.UserProfile.Password" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </form>
+                </div>
+
+                <div id="appliedApplications" style="display:none;">
+                    <h2>Applied Applications</h2>
+                    <table class="table" id="applicationsTable">
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Applied Date</th>
+                                <th>Resume</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsTableBody">
+                            <!-- Dynamic content will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('personalDetailsTab').addEventListener('click', function () {
+            document.getElementById('personalDetails').style.display = 'block';
+            document.getElementById('appliedApplications').style.display = 'none';
+            this.classList.add('active');
+            document.getElementById('applicationsTab').classList.remove('active');
+        });
+
+        document.getElementById('applicationsTab').addEventListener('click', function () {
+            document.getElementById('personalDetails').style.display = 'none';
+            document.getElementById('appliedApplications').style.display = 'block';
+            this.classList.add('active');
+            document.getElementById('personalDetailsTab').classList.remove('active');
+
+            const userId = "@Model.UserProfile.Id";
+
+            fetch(`/api/application/user/${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('applicationsTableBody');
+                    tableBody.innerHTML = '';
+                    data.forEach(application => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                                    <td>${application.jobTitle}</td>
+                                    <td>${new Date(application.appliedDate).toLocaleDateString()}</td>
+                                    <td>${application.resume}</td>
+                                `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching applied applications:', error);
+                });
+        });
+
+        // Handle the form submission using JavaScript
+        document.getElementById('updateForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const id = "@Model.UserProfile.Id";
+            const data = {
+                Id: id,
+                FirstName: document.getElementById('firstName').value,
+                LastName: document.getElementById('lastName').value,
+                Email: document.getElementById('email').value,
+                Password: document.getElementById('password').value
+            };
+
+            fetch(`/api/User/update/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('User updated successfully');
+                    } else {
+                        alert('Update failed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+        });
+
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', function () {
+            fetch('/api/user/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/'; // Redirect to home page or login page
+                    } else {
+                        alert('Logout failed.');
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 ﻿/* Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 
-a.navbar-brand {
+/*a.navbar-brand {
   white-space: normal;
   text-align: center;
   word-break: break-all;
@@ -37,12 +37,87 @@ a {
 button.accept-policy {
   font-size: 1rem;
   line-height: inherit;
+}*/
+
+/*.footer {
+    position: absolute;
+    bottom: 0;
+    border-top: 1px solid #6c757d;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+}*/
+
+
+
+/* Navbar styling */
+.navbar {
+    border-bottom: 2px solid #343a40; /* Darker border for a more defined look */
 }
 
-.footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  white-space: nowrap;
-  line-height: 60px;
+/* Navbar links */
+.nav-link {
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for background and color */
+    padding: 8px 15px; /* Add padding for better touch area */
+    border-radius: 4px; /* Rounded corners for hover effect */
+}
+
+    /* Hover effect */
+    .nav-link:hover,
+    .nav-link:focus {
+        background-color: #6c757d; /* Gray background on hover */
+        color: #fdd835; /* Yellow color on hover */
+    }
+
+.hero {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('~/images/hero-bg.jpg') no-repeat center center;
+    background-size: cover;
+    color: #fff;
+    padding: 100px 0;
+    text-align: center;
+}
+
+/* Call to action button */
+.btn-custom {
+    background-color: #fdd835; /* Yellow background */
+    color: #343a40; /* Dark text color */
+    border: none;
+}
+
+    .btn-custom:hover {
+        background-color: #e1c62f; /* Slightly darker yellow */
+        color: #212529; /* Darker text color */
+    }
+
+/* Section header */
+.section-header {
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
+/* Card styling */
+.card-custom {
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+    .card-custom:hover {
+        transform: scale(1.05);
+    }
+
+    .card-custom img {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+/* Counter animation */
+.counter {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #fdd835;
+}
+
+.counter-container {
+    text-align: center;
+    margin: 20px 0;
 }

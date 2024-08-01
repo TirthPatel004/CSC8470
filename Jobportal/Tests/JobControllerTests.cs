@@ -1,126 +1,178 @@
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using JobPortal.Controllers;
+using JobPortal.Models;
+using JobPortal.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JobPortal.Controllers;
-using JobPortal.Models;
-using JobPortal.Services;
-using Microsoft.AspNetCore.Mvc;
 using Xunit;
-using JobPortal.Data;
-using Microsoft.EntityFrameworkCore; // Add this using directive
 
-public class JobControllerTests
+namespace JobPortal.Tests
 {
-    private readonly JobService _jobService;
-    private readonly JobController _jobController;
-
-    public JobControllerTests()
+    public class JobControllerTests
     {
-        // Setup in-memory database
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "JobPortalTestDb")
-            .Options;
+        private readonly Mock<JobService> _mockJobService;
+        private readonly JobController _controller;
 
-        _jobService = new JobService(new ApplicationDbContext(options));
-        _jobController = new JobController(_jobService);
-    }
-
-    [Fact]
-    public void Get_ReturnsAllJobs()
-    {
-        // Act
-        var result = _jobController.Get() as OkObjectResult;
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var jobs = result.Value as IEnumerable<Job>;
-        Assert.NotNull(jobs);
-        Assert.Equal(2, jobs.Count()); 
-    }
-
-    [Fact]
-    public async Task Get_ReturnsJobById()
-    {
-        // Arrange
-        var jobId = 1;
-
-        // Act
-        var result = await _jobController.Get(jobId) as OkObjectResult;
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var job = result.Value as Job;
-        Assert.NotNull(job);
-        Assert.Equal(jobId, job.Id);
-    }
-
-    [Fact]
-    public async Task Post_CreatesNewJob()
-    {
-        // Arrange
-        var newJob = new Job
+        public JobControllerTests()
         {
-            Title = "New Job Title",
-            Description = "New Job Description",
-            Location = "New Job Location",
-            PostedDate = DateTime.Now,
-            CompanyId = 1
-        };
+            _mockJobService = new Mock<JobService>();
+            _controller = new JobController(_mockJobService.Object);
+        }
 
-        // Act
-        var result = await _jobController.Post(newJob) as CreatedAtActionResult;
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<CreatedAtActionResult>(result);
-        var createdJob = result.Value.GetType().GetProperty("job").GetValue(result.Value, null) as Job;
-        Assert.NotNull(createdJob);
-        Assert.Equal(newJob.Title, createdJob.Title);
-    }
-
-    [Fact]
-    public async Task Put_UpdatesExistingJob()
-    {
-        // Arrange
-        var jobId = 1;
-        var updatedJob = new Job
+        [Fact]
+        public void Get_ReturnsOkResult_WithJobs()
         {
-            Id = jobId,
-            Title = "Updated Job Title Again",
-            Description = "Updated Job Description Again",
-            Location = "Updated Job Location Again",
-            PostedDate = DateTime.Now,
-            CompanyId = 1
-        };
+            // Arrange
+            var jobs = new List<Job>
+            {
+                new Job { Id = 1, Title = "Software Engineer", Location = "Sydney", Description = "Develop software", CompanyId = 1 },
+                new Job { Id = 2, Title = "Data Scientist", Location = "Melbourne", Description = "Analyze data", CompanyId = 2 }
+            };
 
-        // Act
-        var result = await _jobController.Put(jobId, updatedJob) as OkObjectResult;
+            _mockJobService.Setup(service => service.GetAllJobs())
+                .Returns(jobs);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var job = result.Value as Job;
-        Assert.NotNull(job);
-        Assert.Equal(updatedJob.Title, job.Title);
-    }
+            // Act
+            var result = _controller.Get();
 
-    [Fact]
-    public async Task Delete_RemovesJob()
-    {
-        // Arrange
-        var jobId = 2;
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnValue = Assert.IsAssignableFrom<IEnumerable<Job>>(okResult.Value);
+            Assert.Equal(2, returnValue.Count());
+        }
 
-        // Act
-        var result = await _jobController.Delete(jobId) as OkObjectResult;
+        [Fact]
+        public async Task Get_ReturnsNotFound_WhenJobDoesNotExist()
+        {
+            // Arrange
+            var id = 1;
+            _mockJobService.Setup(service => service.GetJobByIdAsync(id))
+                .ReturnsAsync((Job)null);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.IsType<OkObjectResult>(result);
-        var deletedJob = result.Value.GetType().GetProperty("job").GetValue(result.Value, null) as Job;
-        Assert.NotNull(deletedJob);
-        Assert.Equal(jobId, deletedJob.Id);
+            // Act
+            var result = await _controller.Get(id);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Job not found", ((dynamic)notFoundResult.Value).message);
+        }
+
+        [Fact]
+        public async Task PostJob_ReturnsBadRequest_WhenCompanyIdIsInvalid()
+        {
+            // Arrange
+            var job = new Job { Title = "Software Engineer", Location = "Sydney", Description = "Develop software", CompanyId = 0 };
+
+            // Act
+            var result = await _controller.PostJob(job);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Invalid Company ID", badRequestResult.Value);
+        }
+
+        [Fact]
+        public async Task PostJob_ReturnsOkResult_WhenJobIsPostedSuccessfully()
+        {
+            // Arrange
+            var job = new Job { Title = "Software Engineer", Location = "Sydney", Description = "Develop software", CompanyId = 1 };
+            _mockJobService.Setup(service => service.CreateJobAsync(It.IsAny<Job>()))
+                .ReturnsAsync(job);
+
+            // Act
+            var result = await _controller.PostJob(job);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("Job posted successfully", ((dynamic)okResult.Value).message);
+        }
+
+        [Fact]
+        public async Task Put_ReturnsBadRequest_WhenIdsDoNotMatch()
+        {
+            // Arrange
+            var id = 1;
+            var job = new Job { Id = 2 }; // ID does not match
+
+            // Act
+            var result = await _controller.Put(id, job);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Invalid job ID", ((dynamic)badRequestResult.Value).message);
+        }
+
+        [Fact]
+        public async Task Put_ReturnsNotFound_WhenJobDoesNotExist()
+        {
+            // Arrange
+            var id = 1;
+            var job = new Job { Id = id };
+            _mockJobService.Setup(service => service.GetJobByIdAsync(id))
+                .ReturnsAsync((Job)null);
+
+            // Act
+            var result = await _controller.Put(id, job);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task Put_ReturnsOkResult_WhenJobIsUpdated()
+        {
+            // Arrange
+            var id = 1;
+            var job = new Job { Id = id, Title = "Updated Job Title" };
+            _mockJobService.Setup(service => service.GetJobByIdAsync(id))
+                .ReturnsAsync(job);
+            _mockJobService.Setup(service => service.UpdateJobAsync(id, job))
+                .ReturnsAsync(job);
+
+            // Act
+            var result = await _controller.Put(id, job);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnValue = Assert.IsType<Job>(okResult.Value);
+            Assert.Equal(job.Title, returnValue.Title);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsNotFound_WhenJobDoesNotExist()
+        {
+            // Arrange
+            var id = 1;
+            _mockJobService.Setup(service => service.DeleteJobAsync(id))
+                .ReturnsAsync((Job)null);
+
+            // Act
+            var result = await _controller.Delete(id);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Job not found", ((dynamic)notFoundResult.Value).message);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsOkResult_WhenJobIsDeleted()
+        {
+            // Arrange
+            var id = 1;
+            var job = new Job { Id = id, Title = "Software Engineer" };
+            _mockJobService.Setup(service => service.DeleteJobAsync(id))
+                .ReturnsAsync(job);
+
+            // Act
+            var result = await _controller.Delete(id);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnValue = Assert.IsType<Job>(((dynamic)okResult.Value).job);
+            Assert.Equal(job.Id, returnValue.Id);
+        }
     }
 }

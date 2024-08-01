@@ -28,22 +28,60 @@ namespace JobPortal.Models
        // public ICollection<Application> Applications { get; set; }
     }
 
+    //public class Application
+    //{
+    //    public int Id { get; set; }
+
+    //    // Foreign key for Job
+    //    public int JobId { get; set; }
+    //   // public Job Job { get; set; }
+
+    //    // Foreign key for User
+    //    public int UserId { get; set; }
+    //    //public User User { get; set; }
+
+    //    public DateTime AppliedDate { get; set; }
+    //    public string Resume { get; set; }
+    //}
     public class Application
     {
         public int Id { get; set; }
 
         // Foreign key for Job
         public int JobId { get; set; }
-       // public Job Job { get; set; }
+        // Navigation property for Job
+        // public Job Job { get; set; }
 
         // Foreign key for User
         public int UserId { get; set; }
-        //public User User { get; set; }
+        // Navigation property for User
+        // public User User { get; set; }
+
+        // Foreign key for Company
+        public int CompanyId { get; set; }
+        // Navigation property for Company
+        // public Company Company { get; set; }
 
         public DateTime AppliedDate { get; set; }
         public string Resume { get; set; }
+
+        [Required]
+        [EnumDataType(typeof(ApplicationStatus))]
+        public ApplicationStatus Status { get; set; }
     }
 
+    public enum ApplicationStatus
+    {
+        Pending,
+        Reviewed,
+        Accepted,
+        Rejected
+    }
+    public class UserDashboardModel
+    {
+        public User UserProfile { get; set; }
+        public List<Application> AppliedApplications { get; set; }
+    }
     public class Company
     {
         public int Id { get; set; }
@@ -59,6 +97,15 @@ namespace JobPortal.Models
 
     
     }
+    public class CompanyDashboardModel
+    {
+        public int CompanyId { get; set; } 
+        public Company Company { get; set; }
+        public IEnumerable<Job> Jobs { get; set; }
+        public IEnumerable<Application> Applications { get; set; }
+        public IEnumerable<User> Users { get; set; }
+        
+    }
     public class LoginModel
     {
         [Required(ErrorMessage = "The email field is required.")]
@@ -66,5 +113,12 @@ namespace JobPortal.Models
 
         [Required(ErrorMessage = "The password field is required.")]
         public string Password { get; set; }
+    }
+
+    public class UserDashboardViewModel
+    {
+        public User UserProfile { get; set; }
+        public List<Application> AppliedApplications { get; set; }
+        public Dictionary<int, string> JobTitles { get; set; } // To map JobId to Job Title
     }
 }

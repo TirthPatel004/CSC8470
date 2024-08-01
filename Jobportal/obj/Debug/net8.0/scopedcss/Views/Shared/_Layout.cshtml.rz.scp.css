@@ -1,48 +1,123 @@
 /* Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
 for details on configuring this project to bundle and minify static web assets. */
 
-a.navbar-brand[b-s222uw0u3u] {
+/*a.navbar-brand {
   white-space: normal;
   text-align: center;
   word-break: break-all;
 }
 
-a[b-s222uw0u3u] {
+a {
   color: #0077cc;
 }
 
-.btn-primary[b-s222uw0u3u] {
+.btn-primary {
   color: #fff;
   background-color: #1b6ec2;
   border-color: #1861ac;
 }
 
-.nav-pills .nav-link.active[b-s222uw0u3u], .nav-pills .show > .nav-link[b-s222uw0u3u] {
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
   color: #fff;
   background-color: #1b6ec2;
   border-color: #1861ac;
 }
 
-.border-top[b-s222uw0u3u] {
+.border-top {
   border-top: 1px solid #e5e5e5;
 }
-.border-bottom[b-s222uw0u3u] {
+.border-bottom {
   border-bottom: 1px solid #e5e5e5;
 }
 
-.box-shadow[b-s222uw0u3u] {
+.box-shadow {
   box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
 }
 
-button.accept-policy[b-s222uw0u3u] {
+button.accept-policy {
   font-size: 1rem;
   line-height: inherit;
+}*/
+
+/*.footer {
+    position: absolute;
+    bottom: 0;
+    border-top: 1px solid #6c757d;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+}*/
+
+
+
+/* Navbar styling */
+.navbar[b-s222uw0u3u] {
+    border-bottom: 2px solid #343a40; /* Darker border for a more defined look */
 }
 
-.footer[b-s222uw0u3u] {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  white-space: nowrap;
-  line-height: 60px;
+/* Navbar links */
+.nav-link[b-s222uw0u3u] {
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for background and color */
+    padding: 8px 15px; /* Add padding for better touch area */
+    border-radius: 4px; /* Rounded corners for hover effect */
+}
+
+    /* Hover effect */
+    .nav-link:hover[b-s222uw0u3u],
+    .nav-link:focus[b-s222uw0u3u] {
+        background-color: #6c757d; /* Gray background on hover */
+        color: #fdd835; /* Yellow color on hover */
+    }
+
+.hero[b-s222uw0u3u] {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('~/images/hero-bg.jpg') no-repeat center center;
+    background-size: cover;
+    color: #fff;
+    padding: 100px 0;
+    text-align: center;
+}
+
+/* Call to action button */
+.btn-custom[b-s222uw0u3u] {
+    background-color: #fdd835; /* Yellow background */
+    color: #343a40; /* Dark text color */
+    border: none;
+}
+
+    .btn-custom:hover[b-s222uw0u3u] {
+        background-color: #e1c62f; /* Slightly darker yellow */
+        color: #212529; /* Darker text color */
+    }
+
+/* Section header */
+.section-header[b-s222uw0u3u] {
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
+/* Card styling */
+.card-custom[b-s222uw0u3u] {
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+    .card-custom:hover[b-s222uw0u3u] {
+        transform: scale(1.05);
+    }
+
+    .card-custom img[b-s222uw0u3u] {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+/* Counter animation */
+.counter[b-s222uw0u3u] {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #fdd835;
+}
+
+.counter-container[b-s222uw0u3u] {
+    text-align: center;
+    margin: 20px 0;
 }
